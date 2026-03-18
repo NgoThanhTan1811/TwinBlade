@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TwinBlade.Api/TwinBlade.Api.csproj" />
+    <Project Path="src/TwinBlade.Application/TwinBlade.Application.csproj" />
+    <Project Path="src/TwinBlade.Domain/TwinBlade.Domain.csproj" />
+    <Project Path="src/TwinBlade.Infrastructure/TwinBlade.Infrastructure.csproj" />
+  </Folder>
+</Solution>
