@@ -1,0 +1,33 @@
+# Build output
+.env
+
+.bin
+.obj
+global-bundle.pem
+.kiro
+.vscode
+# Git
+.git/
+.gitignore
+
+# IDE
+.vs/
+.vscode/
+
+# Test
+TestResults/
+
+# OS files
+*.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker (cẩn thận)
+docker-compose*
+README.md
+
+# Optional
+*.user
+*.suo

@@ -11,6 +11,7 @@ namespace TwinBlade.Domain.Entities
 
         public int Gold { get; set; }
 
-        public List<PlayerItem> Inventory { get; set; } = new();
+        public List<PlayerItem> Inventory { get; set; } = [];
+        public int HasBossCrard { get; set; }
     }
 }

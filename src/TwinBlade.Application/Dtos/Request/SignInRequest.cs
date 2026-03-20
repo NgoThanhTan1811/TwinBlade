@@ -1,0 +1,3 @@
+namespace TwinBlade.Application.Dtos.Request;
+
+public sealed record SignInRequest(string Username, string Password);

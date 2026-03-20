@@ -8,7 +8,9 @@
 
 .bin
 .obj
-
+global-bundle.pem
+.kiro
+.vscode
 # User-specific files
 *.rsuser
 *.suo

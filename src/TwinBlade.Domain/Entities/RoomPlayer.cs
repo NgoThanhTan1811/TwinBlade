@@ -12,5 +12,7 @@ namespace TwinBlade.Domain.Entities
         public string DisplayName { get; set; } = string.Empty;
 
         public bool IsReady { get; set; }
+        public RoomPlayerState State { get; set; } = new();
+
     }
 }
