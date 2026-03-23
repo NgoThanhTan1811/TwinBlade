@@ -1,16 +1,12 @@
 namespace TwinBlade.Application.Abstractions.Realtime;
 
 /// <summary>
-/// Typed hub interface — dùng để IHubContext[GameHub, IGameHub] trong Infrastructure
+/// Typed hub interface for session events (lobby, game start)
+/// NOTE: Gameplay events (HP, items, combat) are handled by Unity Mirror
 /// </summary>
 public interface IGameHub
 {
-    Task PlayerHpChanged(object payload);
-    Task PlayerPickedReviveCard(object payload);
-    Task PlayerRevived(object payload);
-    Task RoomStateSynced(object payload);
     Task PlayerJoined(object payload);
     Task PlayerLeft(object payload);
     Task GameStarted(object payload);
-    Task FloorCompleted(object payload);
 }

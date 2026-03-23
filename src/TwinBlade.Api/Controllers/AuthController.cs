@@ -17,7 +17,7 @@ public sealed class AuthController(IMediator mediator) : ControllerBase
         [FromBody] SignInRequest request,
         CancellationToken ct)
     {
-        var result = await mediator.Send(new SignInCommand(request.Username, request.Password), ct);
+        var result = await mediator.Send(new SignInCommand(request.Email, request.Password), ct);
         return Ok(result);
     }
 }

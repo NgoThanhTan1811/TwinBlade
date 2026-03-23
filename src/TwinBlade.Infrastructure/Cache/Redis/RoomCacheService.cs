@@ -5,18 +5,12 @@ using StackExchange.Redis;
 
 namespace TwinBlade.Infrastructure.Cache.Redis;
 
-public sealed class RoomCacheService : IRoomCacheService
+public sealed class RoomCacheService(
+    IConnectionMultiplexer redis,
+    IOptions<RedisOptions> options) : IRoomCacheService
 {
-    private readonly IConnectionMultiplexer _redis;
-    private readonly RedisOptions _options;
-
-    public RoomCacheService(
-        IConnectionMultiplexer redis,
-        IOptions<RedisOptions> options)
-    {
-        _redis = redis;
-        _options = options.Value;
-    }
+    private readonly IConnectionMultiplexer _redis = redis;
+    private readonly RedisOptions _options = options.Value;
 
     public async Task SetRoomCodeAsync(
         string roomCode,

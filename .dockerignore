@@ -1,8 +1,8 @@
 # Build output
 .env
 
-.bin
-.obj
+**/bin
+**/obj
 global-bundle.pem
 .kiro
 .vscode

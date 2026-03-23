@@ -6,8 +6,7 @@ public sealed record RoomStateResponse(
     Guid RoomId,
     string RoomCode,
     RoomStatus Status,
-    int CurrentFloor,
-    int TotalFloors,
+    bool BossMapActivated,
     bool BossDefeated,
     List<PlayerStateResponse> Players,
     DateTime GameStartedAt,
@@ -16,14 +15,5 @@ public sealed record RoomStateResponse(
 
 public sealed record PlayerStateResponse(
     Guid PlayerId,
-    string DisplayName,
-    int CurrentHp,
-    int MaxHp,
-    int AttackPower,
-    int Defense,
-    bool IsAlive,
-    int ReviveCardsCount,
-    float PositionX,
-    float PositionY,
-    float PositionZ
+    string DisplayName
 );

@@ -16,21 +16,11 @@ public sealed class GetRoomStateQueryHandler(IRoomStateService roomStateService)
             state.RoomId,
             state.RoomCode,
             state.Status,
-            state.CurrentFloor,
-            state.TotalFloors,
+            state.BossMapActivated,
             state.BossDefeated,
             state.Players.Select(p => new PlayerStateResponse(
                 p.PlayerId,
-                p.DisplayName,
-                p.CurrentHp,
-                p.MaxHp,
-                p.AttackPower,
-                p.Defense,
-                p.IsAlive,
-                p.ReviveCardsCount,
-                p.PositionX,
-                p.PositionY,
-                p.PositionZ
+                p.DisplayName
             )).ToList(),
             state.GameStartedAt,
             state.LastActivityAt

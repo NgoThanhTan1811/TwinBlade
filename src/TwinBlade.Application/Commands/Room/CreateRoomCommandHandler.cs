@@ -25,7 +25,7 @@ public sealed class CreateRoomCommandHandler(
             CreatedAt = DateTime.UtcNow,
             Players = new List<DomainEntities.RoomPlayer>
             {
-                new DomainEntities.RoomPlayer { PlayerId = request.HostPlayerId, IsReady = false }
+                new() { PlayerId = request.HostPlayerId, IsReady = false }
             }
         };
 

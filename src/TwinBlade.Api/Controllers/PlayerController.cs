@@ -18,7 +18,7 @@ public sealed class PlayerController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(PlayerResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> Register([FromBody] RegisterPlayerRequest request, CancellationToken ct)
     {
-        var player = await mediator.Send(new RegisterPlayerCommand(request.Username, request.DisplayName), ct);
+        var player = await mediator.Send(new RegisterPlayerCommand(request.Email, request.Password, request.Username), ct);
         return CreatedAtAction(nameof(GetPlayer), new { id = player.Id }, player);
     }
 
@@ -49,5 +49,27 @@ public sealed class PlayerController(IMediator mediator) : ControllerBase
     {
         var progress = await mediator.Send(new GetPlayerProgressQuery(id), ct);
         return progress is null ? NotFound() : Ok(progress);
+    }
+
+    [HttpGet("avatars")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAvailableAvatars(CancellationToken ct)
+    {
+        var avatars = await mediator.Send(new GetAvailableAvatarsQuery(), ct);
+        return Ok(avatars);
+    }
+
+    [HttpPut("avatar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ChangeAvatar([FromBody] ChangeAvatarRequest request, CancellationToken ct)
+    {
+        var sub = User.FindFirst("sub")?.Value;
+        if (!Guid.TryParse(sub, out var playerId)) return Unauthorized();
+
+        await mediator.Send(new ChangeAvatarCommand(playerId, request.AvatarFileName), ct);
+        return NoContent();
     }
 }

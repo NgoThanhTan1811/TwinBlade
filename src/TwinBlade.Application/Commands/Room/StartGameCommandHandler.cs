@@ -43,25 +43,17 @@ public sealed class StartGameCommandHandler(
             RoomId = room.Id,
             RoomCode = room.RoomCode,
             Status = RoomStatus.InGame,
-            CurrentFloor = 1,
-            TotalFloors = TotalFloors,
+            BossMapActivated = false,
             BossDefeated = false,
             GameStartedAt = DateTime.UtcNow,
             LastActivityAt = DateTime.UtcNow,
             Version = 1,
-            Players = room.Players.Select(p => new RoomPlayerState
+            Players = [.. room.Players.Select(p => new RoomPlayerState
             {
                 PlayerId = p.PlayerId,
                 DisplayName = p.DisplayName,
-                CurrentHp = DefaultMaxHp,
-                MaxHp = DefaultMaxHp,
-                AttackPower = DefaultAttack,
-                Defense = DefaultDefense,
-                IsAlive = true,
-                HasReviveCard = false,
-                ReviveCardsCount = 0,
                 LastUpdateAt = DateTime.UtcNow
-            }).ToList()
+            })]
         };
 
         await roomStateService.SetRoomStateAsync(runtimeState, cancellationToken);

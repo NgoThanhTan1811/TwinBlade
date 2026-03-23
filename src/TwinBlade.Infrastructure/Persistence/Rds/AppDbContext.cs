@@ -10,16 +10,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Item> Items => Set<Item>();
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<MatchResult> MatchResults => Set<MatchResult>();
-    public DbSet<DungeonFloor> DungeonFloors => Set<DungeonFloor>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Player>(entity =>
         {
             entity.HasKey(x => x.Id);
-
-            entity.Property(x => x.Username).HasMaxLength(100).IsRequired();
-            entity.Property(x => x.DisplayName).HasMaxLength(100).IsRequired();
 
             entity.HasOne(x => x.Progress)
                   .WithOne()
@@ -50,10 +46,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.OwnsMany(x => x.Players);
         });
 
-        modelBuilder.Entity<DungeonFloor>(entity =>
-        {
-            entity.HasKey(x => x.Id);
-            entity.HasIndex(x => x.FloorNumber).IsUnique();
-        });
+
     }
 }

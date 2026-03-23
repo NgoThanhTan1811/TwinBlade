@@ -17,7 +17,7 @@ public sealed class RoomStateService(IConnectionMultiplexer redis) : IRoomStateS
     {
         var db = redis.GetDatabase();
         var value = await db.StringGetAsync(RoomKey(roomId));
-        return value.IsNullOrEmpty ? null : JsonSerializer.Deserialize<RoomRuntimeState>(value!);
+        return value.IsNullOrEmpty ? null : JsonSerializer.Deserialize<RoomRuntimeState>(value.ToString());
     }
 
     public async Task SetRoomStateAsync(RoomRuntimeState state, CancellationToken ct = default)
@@ -61,7 +61,7 @@ public sealed class RoomStateService(IConnectionMultiplexer redis) : IRoomStateS
     {
         var db = redis.GetDatabase();
         var value = await db.StringGetAsync(PlayerKey(roomId, playerId));
-        return value.IsNullOrEmpty ? null : JsonSerializer.Deserialize<RoomPlayerState>(value!);
+        return value.IsNullOrEmpty ? null : JsonSerializer.Deserialize<RoomPlayerState>(value.ToString());
     }
 
     public async Task<bool> AcquireLockAsync(string lockKey, TimeSpan expiry, CancellationToken ct = default)

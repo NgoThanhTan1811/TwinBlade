@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using TwinBlade.Infrastructure.Options;
 
 namespace TwinBlade.Api.Extensions;
 
@@ -9,15 +10,27 @@ public static class AuthExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var region = configuration["Cognito:Region"];
-        var userPoolId = configuration["Cognito:UserPoolId"];
-        var clientId = configuration["Cognito:ClientId"];
+        var cognitoOptions = configuration
+            .GetSection(CognitoOptions.SectionName)
+            .Get<CognitoOptions>();
 
-        if (string.IsNullOrWhiteSpace(region) ||
-            string.IsNullOrWhiteSpace(userPoolId) ||
-            string.IsNullOrWhiteSpace(clientId))
+        var region = Environment.GetEnvironmentVariable("Region") ?? cognitoOptions?.Region;
+        var userPoolId = Environment.GetEnvironmentVariable("Cognito_UserPoolId") ?? cognitoOptions?.UserPoolId;
+        var clientId = Environment.GetEnvironmentVariable("Cognito_ClientId") ?? cognitoOptions?.ClientId;
+
+        if (string.IsNullOrWhiteSpace(region))
         {
-            throw new InvalidOperationException("Missing Cognito configuration.");
+            throw new InvalidOperationException("Missing Cognito region configuration.");
+        }
+
+        if (string.IsNullOrWhiteSpace(userPoolId))
+        {
+            throw new InvalidOperationException("Missing Cognito user pool ID configuration.");
+        }
+
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            throw new InvalidOperationException("Missing Cognito client ID configuration.");
         }
 
         var authority = $"https://cognito-idp.{region}.amazonaws.com/{userPoolId}";

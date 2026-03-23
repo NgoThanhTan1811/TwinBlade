@@ -7,14 +7,12 @@ using StackExchange.Redis;
 using TwinBlade.Application.Abstractions.Auth;
 using TwinBlade.Application.Abstractions.Caching;
 using TwinBlade.Application.Abstractions.Persistence;
-using TwinBlade.Application.Abstractions.Realtime;
 using TwinBlade.Application.Abstractions.Storage;
 using TwinBlade.Infrastructure.Auth.Cognito;
 using TwinBlade.Infrastructure.Cache.Redis;
 using TwinBlade.Infrastructure.Options;
 using TwinBlade.Infrastructure.Persistence.Rds;
 using TwinBlade.Infrastructure.Persistence.Rds.Repositories;
-using TwinBlade.Infrastructure.Realtime;
 using TwinBlade.Infrastructure.Storage.S3;
 
 
@@ -42,10 +40,10 @@ public static class DependencyInjection
 
         // Redis (Elastic Cache)
         var cacheSection = configuration.GetSection("Cache");
-        var redisEndpoint = cacheSection["CacheEndpoint"] ?? "localhost:6379";
+        var redisEndpoint = Environment.GetEnvironmentVariable("CacheEndpoint");
         var configOptions = new ConfigurationOptions
         {
-            EndPoints = { redisEndpoint },
+            EndPoints = { redisEndpoint! },
             Ssl = bool.TryParse(cacheSection["Ssl"], out var ssl) && ssl,
             AbortOnConnectFail = false,
             ConnectTimeout = int.TryParse(cacheSection["ConnectTimeoutMs"], out var ct) ? ct : 5000,
@@ -60,6 +58,8 @@ public static class DependencyInjection
 
         // Storage (S3 — uploads done manually via AWS Console)
         services.AddScoped<IAvatarStorageService, S3AvatarStorageService>();
+        services.AddScoped<IAvatarService, AvatarService>();
+        services.AddScoped<IAssetUrlService, S3AssetUrlService>();
 
         // Cache
         services.AddScoped<IRoomCacheService, RoomCacheService>();
@@ -69,12 +69,9 @@ public static class DependencyInjection
         services.AddScoped<IRoomRepository, RoomRepository>();
         services.AddScoped<IItemRepository, ItemRepository>();
         services.AddScoped<IMatchResultRepository, MatchResultRepository>();
-        services.AddScoped<IDungeonFloorRepository, DungeonFloorRepository>();
 
-        // Realtime (SignalR — registered in API layer, service registered here)
-        services.AddScoped<IGameHubService, GameHubService>();
+        // Realtime state storage
         services.AddScoped<IRoomStateService, RoomStateService>();
-        services.AddScoped<ILeaderboardService, LeaderboardService>();
 
         return services;
     }

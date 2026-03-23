@@ -15,7 +15,7 @@ public sealed class GetPlayerQueryHandler(IPlayerRepository playerRepository)
         return new PlayerResponse(
             player.Id,
             player.Username,
-            player.DisplayName,
+            player.Email,
             player.AvatarUrl,
             player.Progress.Gold,
             player.CreatedAt

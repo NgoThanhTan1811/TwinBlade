@@ -4,5 +4,6 @@ namespace TwinBlade.Application.Abstractions.Auth;
 
 public interface ICognitoAuthService
 {
-    Task<AuthResult> SignInAsync(string username, string password, CancellationToken ct = default);
+    Task<string> SignUpAsync(string email, string password, string username, CancellationToken ct = default);
+    Task<AuthResult> SignInAsync(string email, string password, CancellationToken ct = default);
 }

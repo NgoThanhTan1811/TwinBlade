@@ -5,6 +5,7 @@ using TwinBlade.Application.Commands.Match;
 using TwinBlade.Application.Dtos.Request;
 using TwinBlade.Application.Dtos.Response;
 using TwinBlade.Application.Queries.Match;
+using TwinBlade.Domain.Entities;
 
 namespace TwinBlade.Api.Controllers;
 
@@ -19,7 +20,16 @@ public sealed class MatchController(IMediator mediator) : ControllerBase
     {
         var command = new SubmitMatchResultCommand(
             request.RoomId,
-            request.Players.Select(p => new PlayerMatchResultEntry(p.PlayerId, p.Score, p.EarnedGold)).ToList()
+            [.. request.Players.Select(p => new PlayerMatchResultEntry(
+                p.PlayerId,
+                p.Score,
+                p.EarnedGold,
+                [.. p.PickedItems.Select(i => new RuntimePlayerItem
+                {
+                    ItemId = i.ItemId,
+                    Quantity = i.Quantity
+                })]
+            ))]
         );
 
         var result = await mediator.Send(command, ct);

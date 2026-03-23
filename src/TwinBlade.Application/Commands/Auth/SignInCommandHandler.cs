@@ -8,5 +8,5 @@ public sealed class SignInCommandHandler(ICognitoAuthService cognitoAuthService)
     : IRequestHandler<SignInCommand, AuthResult>
 {
     public Task<AuthResult> Handle(SignInCommand request, CancellationToken cancellationToken)
-        => cognitoAuthService.SignInAsync(request.Username, request.Password, cancellationToken);
+        => cognitoAuthService.SignInAsync(request.Email, request.Password, cancellationToken);
 }

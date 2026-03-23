@@ -8,5 +8,8 @@ public sealed record SubmitMatchResultRequest(
 public sealed record PlayerMatchResultRequest(
     Guid PlayerId,
     int Score,
-    int EarnedGold
+    int EarnedGold,
+    List<RuntimePlayerItemDto> PickedItems
 );
+
+public sealed record RuntimePlayerItemDto(Guid ItemId, int Quantity);

@@ -15,10 +15,10 @@ public sealed class S3AvatarStorageService(
     // S3 objects are uploaded manually via AWS Console — this returns the pre-signed URL for reading
     public async Task<string> GetAvatarUrlAsync(Guid playerId, CancellationToken ct = default)
     {
-        var key = $"avatars/{playerId}";
+        var key = $"{_options.AvatarPathPrefix}/{playerId}";
         var request = new GetPreSignedUrlRequest
         {
-            BucketName = _options.AvatarBucket,
+            BucketName = _options.BucketName,
             Key = key,
             Expires = DateTime.UtcNow.AddHours(1)
         };
@@ -31,8 +31,8 @@ public sealed class S3AvatarStorageService(
     {
         // S3 uploads are handled manually via AWS Console
         // This returns the expected S3 URL for the avatar
-        var key = $"avatars/{playerId}";
-        var url = $"https://{_options.AvatarBucket}.s3.{_options.Region}.amazonaws.com/{key}";
+        var key = $"{_options.AvatarPathPrefix}/{playerId}";
+        var url = $"{_options.BaseUrl.TrimEnd('/')}/{key}";
         return Task.FromResult(url);
     }
 }

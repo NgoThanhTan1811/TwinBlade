@@ -9,6 +9,9 @@ public sealed class MatchResultRepository(AppDbContext dbContext) : IMatchResult
     public async Task<MatchResult?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => await dbContext.MatchResults.FirstOrDefaultAsync(m => m.Id == id, ct);
 
+    public async Task<List<MatchResult>> GetAllAsync(CancellationToken ct = default)
+        => await dbContext.MatchResults.ToListAsync(ct);
+
     public async Task<List<MatchResult>> GetByRoomIdAsync(Guid roomId, CancellationToken ct = default)
         => await dbContext.MatchResults.Where(m => m.RoomId == roomId).ToListAsync(ct);
 

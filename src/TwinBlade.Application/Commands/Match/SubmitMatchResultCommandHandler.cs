@@ -1,4 +1,5 @@
 using MediatR;
+using TwinBlade.Application.Abstractions.Caching;
 using TwinBlade.Application.Abstractions.Persistence;
 using TwinBlade.Application.Dtos.Response;
 using TwinBlade.Domain.Entities;
@@ -8,7 +9,8 @@ namespace TwinBlade.Application.Commands.Match;
 public sealed class SubmitMatchResultCommandHandler(
     IMatchResultRepository matchResultRepository,
     IRoomRepository roomRepository,
-    IPlayerRepository playerRepository)
+    IPlayerRepository playerRepository,
+    IRoomStateService roomStateService)
     : IRequestHandler<SubmitMatchResultCommand, MatchResultResponse>
 {
     public async Task<MatchResultResponse> Handle(SubmitMatchResultCommand request, CancellationToken cancellationToken)
@@ -19,12 +21,37 @@ public sealed class SubmitMatchResultCommandHandler(
         if (room.Status != RoomStatus.InGame)
             throw new InvalidOperationException("Room is not in game.");
 
-        // Award gold to each player
+        // Award gold and merge inventory to each player
         foreach (var entry in request.Players)
         {
             var player = await playerRepository.GetByIdAsync(entry.PlayerId, cancellationToken);
-            if (player is not null)
-                player.Progress.Gold += entry.EarnedGold;
+            if (player is null) continue;
+
+            // Award gold
+            player.Progress.Gold += entry.EarnedGold;
+
+            // Merge runtime items into persistent inventory
+            foreach (var runtimeItem in entry.PickedItems)
+            {
+                var existingItem = player.Progress.Inventory
+                    .FirstOrDefault(i => i.ItemId == runtimeItem.ItemId);
+
+                if (existingItem is not null)
+                {
+                    // Stack with existing item
+                    existingItem.Quantity += runtimeItem.Quantity;
+                }
+                else
+                {
+                    // Add new item to inventory
+                    player.Progress.Inventory.Add(new PlayerItem
+                    {
+                        Id = Guid.NewGuid(),
+                        ItemId = runtimeItem.ItemId,
+                        Quantity = runtimeItem.Quantity
+                    });
+                }
+            }
         }
 
         var matchResult = new MatchResult
@@ -39,6 +66,9 @@ public sealed class SubmitMatchResultCommandHandler(
                 EarnedGold = p.EarnedGold
             }).ToList()
         };
+
+        // Clean up runtime state from Redis
+        await roomStateService.DeleteRoomStateAsync(request.RoomId, cancellationToken);
 
         room.Status = RoomStatus.Finished;
 
