@@ -1,5 +1,7 @@
 using Amazon.CognitoIdentityProvider;
+using Amazon.Runtime;
 using Amazon.S3;
+using Amazon;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,18 +27,67 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         // Options
-        services.Configure<CognitoOptions>(configuration.GetSection(CognitoOptions.SectionName));
+        services.Configure<CognitoOptions>(options =>
+        {
+            var section = configuration.GetSection(CognitoOptions.SectionName);
+            section.Bind(options);
+
+            options.UserPoolId = Environment.GetEnvironmentVariable("Cognito_UserPoolId")
+                                ?? options.UserPoolId;
+            options.ClientId = Environment.GetEnvironmentVariable("Cognito_ClientId")
+                                ?? options.ClientId;
+            options.Region = Environment.GetEnvironmentVariable("Region")
+                                ?? Environment.GetEnvironmentVariable("AWS_REGION")
+                                ?? options.Region;
+            options.ClientSecret = Environment.GetEnvironmentVariable("Cognito_Secret")
+                                ?? options.ClientSecret;
+        }); 
         services.Configure<S3Options>(configuration.GetSection(S3Options.SectionName));
         services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.SectionName));
 
         // AWS
-        services.AddDefaultAWSOptions(configuration.GetAWSOptions());
+        var accessKeyId = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
+        var secretAccessKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+        var sessionToken = Environment.GetEnvironmentVariable("AWS_SESSION_TOKEN");
+        var region = Environment.GetEnvironmentVariable("AWS_REGION")
+                     ?? Environment.GetEnvironmentVariable("AWS_DEFAULT_REGION")
+                     ?? Environment.GetEnvironmentVariable("Region")
+                     ?? configuration["AWS:Region"]
+                     ?? configuration["S3:Region"];
+
+        if (!string.IsNullOrWhiteSpace(accessKeyId) ^ !string.IsNullOrWhiteSpace(secretAccessKey))
+        {
+            throw new InvalidOperationException("Both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be set together.");
+        }
+
+        var awsOptions = configuration.GetAWSOptions();
+
+        if (!string.IsNullOrWhiteSpace(region))
+        {
+            awsOptions.Region = RegionEndpoint.GetBySystemName(region);
+        }
+
+        if (!string.IsNullOrWhiteSpace(accessKeyId) && !string.IsNullOrWhiteSpace(secretAccessKey))
+        {
+            awsOptions.Credentials = string.IsNullOrWhiteSpace(sessionToken)
+                ? new BasicAWSCredentials(accessKeyId, secretAccessKey)
+                : new SessionAWSCredentials(accessKeyId, secretAccessKey, sessionToken);
+        }
+
+        services.AddDefaultAWSOptions(awsOptions);
         services.AddAWSService<IAmazonS3>();
         services.AddAWSService<IAmazonCognitoIdentityProvider>();
 
         // Database (RDS PostgreSQL)
+        var host = Environment.GetEnvironmentVariable("DB_HOST");
+        var password = Environment.GetEnvironmentVariable("DB_PASSWORD");
+        var certPath = Path.Combine(AppContext.BaseDirectory, "global-bundle.pem");
+        
+        var connectionString =
+            @$"Host={host};Port=5432;Database=postgres;Username=postgres;Password={password};SSL Mode=VerifyFull;Root Certificate={certPath}";
+
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(connectionString));
 
         // Redis (Elastic Cache)
         var cacheSection = configuration.GetSection("Cache");

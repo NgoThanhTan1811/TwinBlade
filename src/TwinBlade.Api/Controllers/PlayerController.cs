@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using TwinBlade.Application.Commands.Player;
 using TwinBlade.Application.Dtos.Request;
 using TwinBlade.Application.Dtos.Response;
@@ -13,21 +14,12 @@ namespace TwinBlade.Api.Controllers;
 [Authorize]
 public sealed class PlayerController(IMediator mediator) : ControllerBase
 {
-    [HttpPost("register")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(PlayerResponse), StatusCodes.Status201Created)]
-    public async Task<IActionResult> Register([FromBody] RegisterPlayerRequest request, CancellationToken ct)
-    {
-        var player = await mediator.Send(new RegisterPlayerCommand(request.Email, request.Password, request.Username), ct);
-        return CreatedAtAction(nameof(GetPlayer), new { id = player.Id }, player);
-    }
-
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(PlayerResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPlayer(Guid id, CancellationToken ct)
     {
-        var player = await mediator.Send(new GetPlayerQuery(id), ct);
+        var player = await mediator.Send(new GetPlayerByIdQuery(id), ct);
         return player is null ? NotFound() : Ok(player);
     }
 
@@ -35,10 +27,11 @@ public sealed class PlayerController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(PlayerResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMe(CancellationToken ct)
     {
-        var sub = User.FindFirst("sub")?.Value;
-        if (!Guid.TryParse(sub, out var playerId)) return Unauthorized();
+        var cognitoId = GetCurrentCognitoId();
+        if (string.IsNullOrWhiteSpace(cognitoId))
+            return Unauthorized();
 
-        var player = await mediator.Send(new GetPlayerQuery(playerId), ct);
+        var player = await mediator.Send(new GetPlayerQuery(cognitoId), ct);
         return player is null ? NotFound() : Ok(player);
     }
 
@@ -66,10 +59,30 @@ public sealed class PlayerController(IMediator mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChangeAvatar([FromBody] ChangeAvatarRequest request, CancellationToken ct)
     {
-        var sub = User.FindFirst("sub")?.Value;
-        if (!Guid.TryParse(sub, out var playerId)) return Unauthorized();
+        var cognitoId = GetCurrentCognitoId();
+        if (string.IsNullOrWhiteSpace(cognitoId)) return Unauthorized();
 
-        await mediator.Send(new ChangeAvatarCommand(playerId, request.AvatarFileName), ct);
+        var player = await mediator.Send(new GetPlayerQuery(cognitoId), ct);
+        if (player is null) return NotFound();
+
+        await mediator.Send(new ChangeAvatarCommand(player.Id, request.AvatarFileName), ct);
         return NoContent();
+    }
+
+    private string? GetCurrentCognitoId()
+    {
+        var cognitoId = User.FindFirst("sub")?.Value;
+        if (!string.IsNullOrWhiteSpace(cognitoId)) return cognitoId;
+
+        cognitoId = User.FindFirst("username")?.Value;
+        if (!string.IsNullOrWhiteSpace(cognitoId)) return cognitoId;
+
+        cognitoId = User.FindFirst("cognito:username")?.Value;
+        if (!string.IsNullOrWhiteSpace(cognitoId)) return cognitoId;
+
+        cognitoId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrWhiteSpace(cognitoId)) return cognitoId;
+
+        return User.Identity?.Name;
     }
 }

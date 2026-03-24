@@ -17,6 +17,15 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             entity.HasKey(x => x.Id);
 
+            entity.HasIndex(p => p.CognitoId).IsUnique();
+            entity.Property(x => x.CognitoId).IsRequired();
+            
+            entity.Property(x => x.Username).IsRequired();
+            entity.HasIndex(p => p.Username).IsUnique();
+
+            entity.Property(x => x.Email).IsRequired();
+            entity.HasIndex(p => p.Email).IsUnique();
+
             entity.HasOne(x => x.Progress)
                   .WithOne()
                   .HasForeignKey<PlayerProgress>(x => x.PlayerId);
@@ -46,6 +55,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.OwnsMany(x => x.Players);
         });
 
+        modelBuilder.Ignore<RoomPlayerState>();
 
     }
 }

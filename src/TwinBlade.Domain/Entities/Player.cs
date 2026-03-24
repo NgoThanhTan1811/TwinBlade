@@ -8,9 +8,10 @@ namespace TwinBlade.Domain.Entities
     public class Player
     {
         public Guid Id { get; set; }
+        public string CognitoId { get; set; } = string.Empty;
 
         public string Username { get; set; } = string.Empty;
-        
+
         public string Email { get; set; } = string.Empty;
 
         public string AvatarUrl { get; set; } = string.Empty;
@@ -18,6 +19,6 @@ namespace TwinBlade.Domain.Entities
         public DateTime CreatedAt { get; set; }
 
         public PlayerProgress Progress { get; set; } = new();
-        
+
     }
 }

@@ -1,22 +1,20 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using TwinBlade.Infrastructure.Options;
 
 namespace TwinBlade.Api.Extensions;
 
 public static class AuthExtensions
 {
-    public static IServiceCollection AddCognitoAuth(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    public static IServiceCollection AddCognitoAuth(this IServiceCollection services, IConfiguration configuration)
     {
-        var cognitoOptions = configuration
-            .GetSection(CognitoOptions.SectionName)
-            .Get<CognitoOptions>();
-
-        var region = Environment.GetEnvironmentVariable("Region") ?? cognitoOptions?.Region;
-        var userPoolId = Environment.GetEnvironmentVariable("Cognito_UserPoolId") ?? cognitoOptions?.UserPoolId;
-        var clientId = Environment.GetEnvironmentVariable("Cognito_ClientId") ?? cognitoOptions?.ClientId;
+        var region = Environment.GetEnvironmentVariable("Region")
+                     ?? Environment.GetEnvironmentVariable("AWS_REGION")
+                     ?? configuration["Cognito:Region"];
+        var userPoolId = Environment.GetEnvironmentVariable("Cognito_UserPoolId")
+                         ?? configuration["Cognito:UserPoolId"];
+        var clientId = Environment.GetEnvironmentVariable("Cognito_ClientId")
+                       ?? configuration["Cognito:ClientId"];
 
         if (string.IsNullOrWhiteSpace(region))
         {
@@ -40,36 +38,58 @@ public static class AuthExtensions
             .AddJwtBearer(options =>
             {
                 options.Authority = authority;
+                options.RequireHttpsMetadata = true;
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidIssuer = authority,
 
-                    ValidateAudience = true,
-                    ValidAudience = clientId,
+                    ValidateAudience = false,
 
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
 
-                    NameClaimType = "cognito:username",
-                    RoleClaimType = "cognito:groups"
+                    NameClaimType = "username",
+                    RoleClaimType = "cognito:groups",
+
+                    ClockSkew = TimeSpan.FromMinutes(1)
                 };
 
                 options.Events = new JwtBearerEvents
                 {
                     OnAuthenticationFailed = context =>
                     {
-                        Console.WriteLine($"Auth failed: {context.Exception.Message}");
+                        Console.WriteLine($"Auth failed: {context.Exception}");
                         return Task.CompletedTask;
                     },
+
                     OnTokenValidated = context =>
                     {
-                        var sub = context.Principal?.FindFirst("sub")?.Value;
-                        var username = context.Principal?.FindFirst("cognito:username")?.Value;
-                        var email = context.Principal?.FindFirst("email")?.Value;
+                        var principal = context.Principal;
 
-                        Console.WriteLine($"Token valid. sub={sub}, username={username}, email={email}");
+                        var sub = principal?.FindFirst("sub")?.Value;
+                        var username = principal?.FindFirst("username")?.Value
+                                       ?? principal?.FindFirst("cognito:username")?.Value;
+                        var email = principal?.FindFirst("email")?.Value;
+                        var tokenUse = principal?.FindFirst("token_use")?.Value;
+                        var tokenClientId = principal?.FindFirst("client_id")?.Value;
+
+                        if (!string.Equals(tokenUse, "access", StringComparison.Ordinal))
+                        {
+                            context.Fail("Only access tokens are allowed.");
+                            return Task.CompletedTask;
+                        }
+
+                        if (!string.Equals(tokenClientId, clientId, StringComparison.Ordinal))
+                        {
+                            context.Fail("Invalid client_id.");
+                            return Task.CompletedTask;
+                        }
+
+                        Console.WriteLine(
+                            $"Token valid. sub={sub}, username={username}, email={email}, token_use={tokenUse}, client_id={tokenClientId}");
+
                         return Task.CompletedTask;
                     }
                 };

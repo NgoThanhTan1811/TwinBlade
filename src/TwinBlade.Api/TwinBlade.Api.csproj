@@ -12,12 +12,17 @@
     <PackageReference Include="MediatR" Version="14.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\TwinBlade.Application\TwinBlade.Application.csproj" />
     <ProjectReference Include="..\TwinBlade.Infrastructure\TwinBlade.Infrastructure.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+  <None Include="global-bundle.pem">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
 
 </Project>

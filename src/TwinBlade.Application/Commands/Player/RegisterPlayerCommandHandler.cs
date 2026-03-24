@@ -31,16 +31,25 @@ public sealed class RegisterPlayerCommandHandler(
         var player = new PlayerEntity
         {
             Id = Guid.NewGuid(),
+            CognitoId = cognitoUserId,
             Username = request.Username,
             Email = request.Email,
             AvatarUrl = assetUrlService.GetDefaultAvatarUrl(),
             CreatedAt = DateTime.UtcNow,
-            Progress = new PlayerProgress { Gold = 0, Inventory = new() }
+            Progress = new PlayerProgress { Gold = 0, Inventory = [] }
         };
 
         await playerRepository.AddAsync(player, cancellationToken);
         await playerRepository.SaveChangesAsync(cancellationToken);
 
-        return new PlayerResponse(player.Id, player.Username, player.Email, player.AvatarUrl, 0, player.CreatedAt);
+        return new PlayerResponse(
+            player.Id,
+            player.CognitoId,
+            player.Username,
+            player.Email,
+            player.AvatarUrl,
+            0,
+            player.CreatedAt
+        );
     }
 }

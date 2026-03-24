@@ -1,9 +1,11 @@
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
+using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text;
 using TwinBlade.Application.Abstractions.Auth;
 using TwinBlade.Application.Dtos.Response;
 using TwinBlade.Infrastructure.Options;
-using Microsoft.Extensions.Options;
 
 namespace TwinBlade.Infrastructure.Auth.Cognito;
 
@@ -13,13 +15,28 @@ public sealed class CognitoAuthService(
 {
     private readonly CognitoOptions _options = options.Value;
 
-    public async Task<string> SignUpAsync(string email, string password, string username, CancellationToken ct = default)
+    private static string ComputeSecretHash(string username, string clientId, string clientSecret)
+    {
+        var key = Encoding.UTF8.GetBytes(clientSecret);
+        var message = Encoding.UTF8.GetBytes(username + clientId);
+
+        using var hmac = new HMACSHA256(key);
+        var hash = hmac.ComputeHash(message);
+        return Convert.ToBase64String(hash);
+    }
+
+    public async Task<string> SignUpAsync(
+        string email,
+        string password,
+        string username,
+        CancellationToken ct = default)
     {
         var request = new SignUpRequest
         {
             ClientId = _options.ClientId,
             Username = email,
             Password = password,
+            SecretHash = ComputeSecretHash(email, _options.ClientId, _options.ClientSecret),
             UserAttributes = new List<AttributeType>
             {
                 new() { Name = "email", Value = email },
@@ -29,38 +46,79 @@ public sealed class CognitoAuthService(
 
         var response = await cognito.SignUpAsync(request, ct);
 
-        // Auto-confirm user (for development/testing)
         var confirmRequest = new AdminConfirmSignUpRequest
         {
             UserPoolId = _options.UserPoolId,
             Username = email
         };
+
         await cognito.AdminConfirmSignUpAsync(confirmRequest, ct);
 
         return response.UserSub;
     }
 
-    public async Task<AuthResult> SignInAsync(string email, string password, CancellationToken ct = default)
+    public async Task<AuthResult> SignInAsync(
+        string email,
+        string password,
+        CancellationToken ct = default)
     {
-        var request = new AdminInitiateAuthRequest
+        var request = new InitiateAuthRequest
         {
-            UserPoolId = _options.UserPoolId,
             ClientId = _options.ClientId,
-            AuthFlow = AuthFlowType.ADMIN_USER_PASSWORD_AUTH,
+            AuthFlow = AuthFlowType.USER_PASSWORD_AUTH,
             AuthParameters = new Dictionary<string, string>
             {
                 ["USERNAME"] = email,
-                ["PASSWORD"] = password
+                ["PASSWORD"] = password,
+                ["SECRET_HASH"] = ComputeSecretHash(email, _options.ClientId, _options.ClientSecret)
             }
         };
 
-        var response = await cognito.AdminInitiateAuthAsync(request, ct);
+        var response = await cognito.InitiateAuthAsync(request, ct);
+        var result = response.AuthenticationResult;
+
+        if (result is null || string.IsNullOrWhiteSpace(result.AccessToken))
+        {
+            throw new InvalidOperationException("Cognito did not return a valid access token.");
+        }
 
         return new AuthResult
         {
-            AccessToken = response.AuthenticationResult.AccessToken,
-            IdToken = response.AuthenticationResult.IdToken,
-            RefreshToken = response.AuthenticationResult.RefreshToken
+            AccessToken = result.AccessToken,
+            RefreshToken = result.RefreshToken
+        };
+    }
+
+    public async Task<AuthResult> RefreshTokenAsync(
+        string email,
+        string refreshToken,
+        CancellationToken ct = default)
+    {
+        var request = new InitiateAuthRequest
+        {
+            ClientId = _options.ClientId,
+            AuthFlow = AuthFlowType.REFRESH_TOKEN_AUTH,
+            AuthParameters = new Dictionary<string, string>
+            {
+                ["REFRESH_TOKEN"] = refreshToken,
+                ["SECRET_HASH"] = ComputeSecretHash(email, _options.ClientId, _options.ClientSecret)
+            }
+        };
+
+        var response = await cognito.InitiateAuthAsync(request, ct);
+        var result = response.AuthenticationResult;
+
+        if (result is null || string.IsNullOrWhiteSpace(result.AccessToken))
+        {
+            throw new InvalidOperationException("Cognito did not return a valid access token during refresh.");
+        }
+
+        return new AuthResult
+        {
+            AccessToken = result.AccessToken,
+            RefreshToken = string.IsNullOrWhiteSpace(result.RefreshToken)
+                ? refreshToken
+                : result.RefreshToken
         };
     }
 }
