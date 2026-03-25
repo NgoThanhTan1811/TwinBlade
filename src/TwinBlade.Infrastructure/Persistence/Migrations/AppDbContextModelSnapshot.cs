@@ -22,32 +22,6 @@ namespace TwinBlade.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("TwinBlade.Domain.Entities.Item", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Items");
-                });
-
             modelBuilder.Entity("TwinBlade.Domain.Entities.MatchResult", b =>
                 {
                     b.Property<Guid>("Id")
@@ -104,6 +78,62 @@ namespace TwinBlade.Infrastructure.Persistence.Migrations
                     b.ToTable("Players");
                 });
 
+            modelBuilder.Entity("TwinBlade.Domain.Entities.PlayerEquipment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("EquippedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Slot")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("PlayerId", "Slot")
+                        .IsUnique();
+
+                    b.ToTable("PlayerEquipments");
+                });
+
+            modelBuilder.Entity("TwinBlade.Domain.Entities.PlayerItem", b =>
+                {
+                    b.Property<Guid>("PlayerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AcquiredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("PlayerId", "ItemId");
+
+                    b.HasIndex("ItemId");
+
+                    b.ToTable("PlayerItems");
+                });
+
             modelBuilder.Entity("TwinBlade.Domain.Entities.PlayerProgress", b =>
                 {
                     b.Property<Guid>("PlayerId")
@@ -112,8 +142,11 @@ namespace TwinBlade.Infrastructure.Persistence.Migrations
                     b.Property<int>("Gold")
                         .HasColumnType("integer");
 
-                    b.Property<int>("HasBossCrard")
+                    b.Property<int>("HasBossCard")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("PlayerId");
 
@@ -145,6 +178,99 @@ namespace TwinBlade.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Rooms");
+                });
+
+            modelBuilder.Entity("TwinBlade.Domain.Items.Item", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ItemMaterialId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ItemTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("ItemMaterialId");
+
+                    b.HasIndex("ItemTypeId");
+
+                    b.ToTable("Items");
+                });
+
+            modelBuilder.Entity("TwinBlade.Domain.Items.ItemMeterials", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("ItemMaterials");
+                });
+
+            modelBuilder.Entity("TwinBlade.Domain.Items.ItemType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("ItemTypes");
                 });
 
             modelBuilder.Entity("TwinBlade.Domain.Entities.MatchResult", b =>
@@ -180,38 +306,52 @@ namespace TwinBlade.Infrastructure.Persistence.Migrations
                     b.Navigation("Players");
                 });
 
+            modelBuilder.Entity("TwinBlade.Domain.Entities.PlayerEquipment", b =>
+                {
+                    b.HasOne("TwinBlade.Domain.Items.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("TwinBlade.Domain.Entities.Player", "Player")
+                        .WithMany("EquippedItems")
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("Player");
+                });
+
+            modelBuilder.Entity("TwinBlade.Domain.Entities.PlayerItem", b =>
+                {
+                    b.HasOne("TwinBlade.Domain.Items.Item", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TwinBlade.Domain.Entities.Player", "Player")
+                        .WithMany("InventoryItems")
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("Player");
+                });
+
             modelBuilder.Entity("TwinBlade.Domain.Entities.PlayerProgress", b =>
                 {
-                    b.HasOne("TwinBlade.Domain.Entities.Player", null)
+                    b.HasOne("TwinBlade.Domain.Entities.Player", "Player")
                         .WithOne("Progress")
                         .HasForeignKey("TwinBlade.Domain.Entities.PlayerProgress", "PlayerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsMany("TwinBlade.Domain.Entities.PlayerItem", "Inventory", b1 =>
-                        {
-                            b1.Property<Guid>("PlayerProgressPlayerId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<Guid>("Id")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("uuid");
-
-                            b1.Property<Guid>("ItemId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<int>("Quantity")
-                                .HasColumnType("integer");
-
-                            b1.HasKey("PlayerProgressPlayerId", "Id");
-
-                            b1.ToTable("PlayerItem");
-
-                            b1.WithOwner()
-                                .HasForeignKey("PlayerProgressPlayerId");
-                        });
-
-                    b.Navigation("Inventory");
+                    b.Navigation("Player");
                 });
 
             modelBuilder.Entity("TwinBlade.Domain.Entities.Room", b =>
@@ -248,8 +388,31 @@ namespace TwinBlade.Infrastructure.Persistence.Migrations
                     b.Navigation("Players");
                 });
 
+            modelBuilder.Entity("TwinBlade.Domain.Items.Item", b =>
+                {
+                    b.HasOne("TwinBlade.Domain.Items.ItemMeterials", "ItemMaterial")
+                        .WithMany()
+                        .HasForeignKey("ItemMaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TwinBlade.Domain.Items.ItemType", "ItemType")
+                        .WithMany()
+                        .HasForeignKey("ItemTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ItemMaterial");
+
+                    b.Navigation("ItemType");
+                });
+
             modelBuilder.Entity("TwinBlade.Domain.Entities.Player", b =>
                 {
+                    b.Navigation("EquippedItems");
+
+                    b.Navigation("InventoryItems");
+
                     b.Navigation("Progress")
                         .IsRequired();
                 });

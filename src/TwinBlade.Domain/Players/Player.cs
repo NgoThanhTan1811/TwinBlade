@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TwinBlade.Domain.Enums;
 
 namespace TwinBlade.Domain.Entities
 {
@@ -20,5 +21,8 @@ namespace TwinBlade.Domain.Entities
 
         public PlayerProgress Progress { get; set; } = new();
 
+        public List<PlayerItem> InventoryItems { get; set; } = []; // not equipped items
+
+        public List<PlayerEquipment> EquippedItems { get; set; } = [];
     }
 }

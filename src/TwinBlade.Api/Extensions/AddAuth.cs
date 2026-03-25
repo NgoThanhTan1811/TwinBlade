@@ -95,7 +95,14 @@ public static class AuthExtensions
                 };
             });
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("User", policy =>
+                policy.RequireAuthenticatedUser());
+
+            options.AddPolicy("Admin", policy =>
+                policy.RequireRole("Admin"));
+        });
 
         return services;
     }

@@ -1,3 +1,5 @@
+using TwinBlade.Domain.Enums;
+
 namespace TwinBlade.Domain.Entities;
 
 /// <summary>

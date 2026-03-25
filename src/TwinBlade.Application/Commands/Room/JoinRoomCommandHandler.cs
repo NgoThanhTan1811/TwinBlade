@@ -3,6 +3,7 @@ using TwinBlade.Application.Abstractions.Caching;
 using TwinBlade.Application.Abstractions.Persistence;
 using TwinBlade.Application.Dtos.Response;
 using TwinBlade.Domain.Entities;
+using TwinBlade.Domain.Enums;
 
 namespace TwinBlade.Application.Commands.Room;
 

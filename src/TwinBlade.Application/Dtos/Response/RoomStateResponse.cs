@@ -1,4 +1,5 @@
 using TwinBlade.Domain.Entities;
+using TwinBlade.Domain.Enums;
 
 namespace TwinBlade.Application.Dtos.Response;
 

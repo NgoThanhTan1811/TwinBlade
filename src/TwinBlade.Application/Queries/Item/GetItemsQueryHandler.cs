@@ -10,6 +10,14 @@ public sealed class GetItemsQueryHandler(IItemRepository itemRepository)
     public async Task<List<ItemResponse>> Handle(GetItemsQuery request, CancellationToken cancellationToken)
     {
         var items = await itemRepository.GetAllActiveAsync(cancellationToken);
-        return items.Select(i => new ItemResponse(i.Id, i.Name, i.Description, i.ImageUrl)).ToList();
+        return items.Select(i => new ItemResponse(
+            i.Id,
+            i.Code,
+            i.ItemType.Code,
+            i.ItemMaterial.Code,
+            i.Name,
+            i.Description,
+            i.ImageUrl
+        )).ToList();
     }
 }

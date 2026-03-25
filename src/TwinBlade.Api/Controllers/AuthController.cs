@@ -23,11 +23,28 @@ public sealed class AuthController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("sign-up")]
-    [ProducesResponseType(typeof(PlayerResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(SignUpResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> SignUp([FromBody] RegisterPlayerRequest request, CancellationToken ct)
     {
-        var player = await mediator.Send(new RegisterPlayerCommand(request.Email, request.Password, request.Username), ct);
-        return Created($"auth/sign-up/{player.Id}", player);
+        var player = await mediator.Send(
+            new RegisterPlayerCommand(request.Email, request.Password, request.Username),
+            ct);
+
+        return Ok(new SignUpResponse
+        {
+            PlayerId = player.Id,
+            Email = player.Email,
+            RequiresEmailVerification = true,
+            Message = "Registration successful. Please verify the code sent to your email."
+        });
+    }
+
+    [HttpPost("confirm-sign-up")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ConfirmSignUp([FromBody] ConfirmSignUpRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new ConfirmSignUpCommand(request.Email, request.Code), ct);
+        return Ok();
     }
 
     [HttpPost("refresh-token")]
@@ -39,5 +56,19 @@ public sealed class AuthController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(new RefreshTokenCommand(request.Email, request.RefreshToken), ct);
         return Ok(result);
+    }
+
+    [HttpGet("debug/me")]
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    public IActionResult DebugMe()
+    {
+        var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+        var sub = User.FindFirst("sub")?.Value;
+        return Ok(new
+        {
+            IsAuthenticated = User.Identity?.IsAuthenticated,
+            CognitoId = sub,
+            AllClaims = claims
+        });
     }
 }

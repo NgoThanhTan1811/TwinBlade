@@ -9,13 +9,22 @@ public sealed class GetPlayerProgressQueryHandler(IPlayerRepository playerReposi
 {
     public async Task<PlayerProgressResponse?> Handle(GetPlayerProgressQuery request, CancellationToken cancellationToken)
     {
-        var player = await playerRepository.GetByIdAsync(request.PlayerId, cancellationToken);
+        var player = await playerRepository.GetByIdWithItemsAsync(request.PlayerId, cancellationToken);
         if (player is null) return null;
 
         var progress = player.Progress;
+        var items = player.InventoryItems.Select(pi => new PlayerItemResponse(
+            pi.ItemId,
+            pi.Item.Code,
+            pi.Item.Name,
+            pi.Quantity
+        )).ToList();
+
         return new PlayerProgressResponse(
             progress.Gold,
-            progress.Inventory.Select(i => new PlayerItemResponse(i.Id, i.ItemId, i.Quantity)).ToList()
+            progress.HasBossCard,
+            progress.UpdatedAt,
+            items
         );
     }
 }

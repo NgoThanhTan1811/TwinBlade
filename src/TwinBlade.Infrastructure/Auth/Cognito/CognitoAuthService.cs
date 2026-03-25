@@ -43,52 +43,88 @@ public sealed class CognitoAuthService(
                 new() { Name = "preferred_username", Value = username }
             }
         };
-
-        var response = await cognito.SignUpAsync(request, ct);
-
-        var confirmRequest = new AdminConfirmSignUpRequest
+        
+        await cognito.AdminAddUserToGroupAsync(new AdminAddUserToGroupRequest
         {
             UserPoolId = _options.UserPoolId,
-            Username = email
-        };
+            Username = email,
+            GroupName = "User"
+        }, ct);
 
-        await cognito.AdminConfirmSignUpAsync(confirmRequest, ct);
+        var response = await cognito.SignUpAsync(request, ct);
 
         return response.UserSub;
     }
 
-    public async Task<AuthResult> SignInAsync(
+    public async Task ConfirmSignUpAsync(
         string email,
-        string password,
+        string confirmationCode,
         CancellationToken ct = default)
     {
-        var request = new InitiateAuthRequest
+        var request = new ConfirmSignUpRequest
         {
             ClientId = _options.ClientId,
-            AuthFlow = AuthFlowType.USER_PASSWORD_AUTH,
-            AuthParameters = new Dictionary<string, string>
-            {
-                ["USERNAME"] = email,
-                ["PASSWORD"] = password,
-                ["SECRET_HASH"] = ComputeSecretHash(email, _options.ClientId, _options.ClientSecret)
-            }
+            Username = email,
+            ConfirmationCode = confirmationCode,
+            SecretHash = ComputeSecretHash(email, _options.ClientId, _options.ClientSecret)
         };
 
-        var response = await cognito.InitiateAuthAsync(request, ct);
-        var result = response.AuthenticationResult;
-
-        if (result is null || string.IsNullOrWhiteSpace(result.AccessToken))
-        {
-            throw new InvalidOperationException("Cognito did not return a valid access token.");
-        }
-
-        return new AuthResult
-        {
-            AccessToken = result.AccessToken,
-            RefreshToken = result.RefreshToken
-        };
+        await cognito.ConfirmSignUpAsync(request, ct);
     }
 
+    public async Task ResendConfirmationCodeAsync(
+        string email,
+        CancellationToken ct = default)
+    {
+        var request = new ResendConfirmationCodeRequest
+        {
+            ClientId = _options.ClientId,
+            Username = email,
+            SecretHash = ComputeSecretHash(email, _options.ClientId, _options.ClientSecret)
+        };
+
+        await cognito.ResendConfirmationCodeAsync(request, ct);
+    }
+
+    public async Task<AuthResult> SignInAsync(
+    string email,
+    string password,
+    CancellationToken ct = default)
+    {
+        try
+        {
+            var request = new InitiateAuthRequest
+            {
+                ClientId = _options.ClientId,
+                AuthFlow = AuthFlowType.USER_PASSWORD_AUTH,
+                AuthParameters = new Dictionary<string, string>
+                {
+                    ["USERNAME"] = email,
+                    ["PASSWORD"] = password,
+                    ["SECRET_HASH"] = ComputeSecretHash(email, _options.ClientId, _options.ClientSecret)
+                }
+            };
+
+            var response = await cognito.InitiateAuthAsync(request, ct);
+            var result = response.AuthenticationResult;
+
+            if (result is null || string.IsNullOrWhiteSpace(result.AccessToken))
+            {
+                throw new InvalidOperationException("Cognito did not return a valid access token.");
+            }
+
+            return new AuthResult
+            {
+                AccessToken = result.AccessToken,
+                RefreshToken = result.RefreshToken
+            };
+        }
+        catch (UserNotConfirmedException ex)
+        {
+            throw new InvalidOperationException("User has not verified their email yet.", ex);
+        }
+    }
+    
     public async Task<AuthResult> RefreshTokenAsync(
         string email,
         string refreshToken,

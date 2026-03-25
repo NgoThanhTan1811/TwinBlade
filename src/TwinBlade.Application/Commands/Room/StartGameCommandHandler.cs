@@ -4,6 +4,7 @@ using TwinBlade.Application.Abstractions.Persistence;
 using TwinBlade.Application.Abstractions.Realtime;
 using TwinBlade.Application.Dtos.Response;
 using TwinBlade.Domain.Entities;
+using TwinBlade.Domain.Enums;
 
 namespace TwinBlade.Application.Commands.Room;
 

@@ -3,6 +3,7 @@ using TwinBlade.Application.Abstractions.Caching;
 using TwinBlade.Application.Abstractions.Persistence;
 using TwinBlade.Application.Dtos.Response;
 using TwinBlade.Domain.Entities;
+using TwinBlade.Domain.Enums;
 
 namespace TwinBlade.Application.Commands.Game;
 
@@ -38,11 +39,11 @@ public sealed class ActivateBossMapCommandHandler(
             var player = await playerRepository.GetByIdAsync(request.PlayerId, cancellationToken)
                          ?? throw new InvalidOperationException("Player not found.");
 
-            if (player.Progress.HasBossCrard < RequiredBossKeys)
+            if (player.Progress.HasBossCard < RequiredBossKeys)
                 throw new InvalidOperationException($"Need at least {RequiredBossKeys} boss keys to activate boss map.");
 
             // Consume boss keys (persistent)
-            player.Progress.HasBossCrard -= RequiredBossKeys;
+            player.Progress.HasBossCard -= RequiredBossKeys;
 
             // Update session state
             roomState.BossMapActivated = true;

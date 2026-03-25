@@ -11,6 +11,20 @@ public sealed class PlayerRepository(AppDbContext dbContext) : IPlayerRepository
             .Include(x => x.Progress)
             .FirstOrDefaultAsync(x => x.Id == id, ct);
 
+    public async Task<Player?> GetByIdWithItemsAsync(Guid id, CancellationToken ct = default)
+        => await dbContext.Players
+            .Include(x => x.Progress)
+            .Include(x => x.InventoryItems)
+                .ThenInclude(pi => pi.Item)
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
+
+    public async Task<Player?> GetByIdWithEquipmentAsync(Guid id, CancellationToken ct = default)
+        => await dbContext.Players
+            .Include(x => x.Progress)
+            .Include(x => x.EquippedItems)
+                .ThenInclude(e => e.Item)
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
+
     public async Task<Player?> GetByUsernameAsync(string username, CancellationToken ct = default)
         => await dbContext.Players
             .Include(x => x.Progress)

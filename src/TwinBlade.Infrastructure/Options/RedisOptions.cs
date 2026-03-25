@@ -8,7 +8,6 @@ namespace TwinBlade.Infrastructure.Options
     public sealed class RedisOptions
     {
         public const string SectionName = "Redis";
-
         public string Configuration { get; set; } = string.Empty;
         public string RoomKeyPrefix { get; set; } = "room:";
     }

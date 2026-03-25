@@ -16,8 +16,8 @@ public sealed class AvatarService(
     {
         var request = new ListObjectsV2Request
         {
-            BucketName = _options.BucketName,
-            Prefix = $"{_options.AvatarPathPrefix}/",
+            BucketName = _options.S3_BucketName,
+            Prefix = $"{_options.S3_AvatarPathPrefix}/",
             MaxKeys = 100
         };
 
@@ -25,13 +25,13 @@ public sealed class AvatarService(
 
         return response.S3Objects
             .Where(obj => !obj.Key.EndsWith("/")) // Exclude folders
-            .Select(obj => obj.Key.Replace($"{_options.AvatarPathPrefix}/", ""))
+            .Select(obj => obj.Key.Replace($"{_options.S3_AvatarPathPrefix}/", ""))
             .ToList();
     }
 
     public Task<string> GetAvatarUrlAsync(string avatarFileName, CancellationToken ct = default)
     {
-        var url = $"{_options.BaseUrl}/{_options.AvatarPathPrefix}/{avatarFileName}";
+        var url = $"{_options.S3_BaseUrl}/{_options.S3_AvatarPathPrefix}/{avatarFileName}";
         return Task.FromResult(url);
     }
 }

@@ -11,7 +11,7 @@ namespace TwinBlade.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "User")]
 public sealed class MatchController(IMediator mediator) : ControllerBase
 {
     [HttpPost("submit")]

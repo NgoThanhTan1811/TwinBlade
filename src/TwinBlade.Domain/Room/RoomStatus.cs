@@ -1,4 +1,4 @@
-namespace TwinBlade.Domain.Entities
+namespace TwinBlade.Domain.Enums
 {
     public enum RoomStatus
     {

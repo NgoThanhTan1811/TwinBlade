@@ -3,6 +3,7 @@ using TwinBlade.Application.Abstractions.Caching;
 using TwinBlade.Application.Abstractions.Persistence;
 using TwinBlade.Application.Dtos.Response;
 using TwinBlade.Domain.Entities;
+using TwinBlade.Domain.Enums;
 
 namespace TwinBlade.Application.Commands.Match;
 
@@ -30,28 +31,9 @@ public sealed class SubmitMatchResultCommandHandler(
             // Award gold
             player.Progress.Gold += entry.EarnedGold;
 
-            // Merge runtime items into persistent inventory
-            foreach (var runtimeItem in entry.PickedItems)
-            {
-                var existingItem = player.Progress.Inventory
-                    .FirstOrDefault(i => i.ItemId == runtimeItem.ItemId);
+            // Update boss card   
 
-                if (existingItem is not null)
-                {
-                    // Stack with existing item
-                    existingItem.Quantity += runtimeItem.Quantity;
-                }
-                else
-                {
-                    // Add new item to inventory
-                    player.Progress.Inventory.Add(new PlayerItem
-                    {
-                        Id = Guid.NewGuid(),
-                        ItemId = runtimeItem.ItemId,
-                        Quantity = runtimeItem.Quantity
-                    });
-                }
-            }
+
         }
 
         var matchResult = new MatchResult

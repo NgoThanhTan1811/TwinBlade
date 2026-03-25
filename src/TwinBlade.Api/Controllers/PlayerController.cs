@@ -11,10 +11,11 @@ namespace TwinBlade.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "User")]
 public sealed class PlayerController(IMediator mediator) : ControllerBase
 {
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "Admin")]
     [ProducesResponseType(typeof(PlayerResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPlayer(Guid id, CancellationToken ct)
@@ -42,6 +43,15 @@ public sealed class PlayerController(IMediator mediator) : ControllerBase
     {
         var progress = await mediator.Send(new GetPlayerProgressQuery(id), ct);
         return progress is null ? NotFound() : Ok(progress);
+    }
+
+    [HttpGet("{id:guid}/equipment")]
+    [ProducesResponseType(typeof(List<PlayerEquipmentResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetEquipment(Guid id, CancellationToken ct)
+    {
+        var equipment = await mediator.Send(new GetPlayerEquipmentQuery(id), ct);
+        return equipment is null ? NotFound() : Ok(equipment);
     }
 
     [HttpGet("avatars")]

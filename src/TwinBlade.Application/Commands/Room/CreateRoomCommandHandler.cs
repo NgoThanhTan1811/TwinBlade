@@ -2,7 +2,8 @@ using MediatR;
 using TwinBlade.Application.Abstractions.Caching;
 using TwinBlade.Application.Abstractions.Persistence;
 using TwinBlade.Application.Dtos.Response;
-using DomainEntities = TwinBlade.Domain.Entities;
+using TwinBlade.Domain.Entities;
+using TwinBlade.Domain.Enums;
 
 namespace TwinBlade.Application.Commands.Room;
 
@@ -15,15 +16,15 @@ public sealed class CreateRoomCommandHandler(
     {
         var roomCode = GenerateRoomCode();
 
-        var room = new DomainEntities.Room
+        var room = new Domain.Entities.Room
         {
             Id = Guid.NewGuid(),
             RoomCode = roomCode,
             HostPlayerId = request.HostPlayerId,
-            Status = DomainEntities.RoomStatus.Waiting,
+            Status = RoomStatus.Waiting,
             MaxPlayers = request.MaxPlayers,
             CreatedAt = DateTime.UtcNow,
-            Players = new List<DomainEntities.RoomPlayer>
+            Players = new List<RoomPlayer>
             {
                 new() { PlayerId = request.HostPlayerId, IsReady = false }
             }
@@ -39,7 +40,7 @@ public sealed class CreateRoomCommandHandler(
     private static string GenerateRoomCode()
         => Guid.NewGuid().ToString("N")[..6].ToUpper();
 
-    private static RoomResponse MapToResponse(DomainEntities.Room room) => new(
+    private static RoomResponse MapToResponse(Domain.Entities.Room room) => new(
         room.Id,
         room.RoomCode,
         room.HostPlayerId,

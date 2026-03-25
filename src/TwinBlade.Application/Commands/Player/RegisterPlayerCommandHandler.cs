@@ -36,7 +36,9 @@ public sealed class RegisterPlayerCommandHandler(
             Email = request.Email,
             AvatarUrl = assetUrlService.GetDefaultAvatarUrl(),
             CreatedAt = DateTime.UtcNow,
-            Progress = new PlayerProgress { Gold = 0, Inventory = [] }
+            Progress = new PlayerProgress { Gold = 0, HasBossCard = 0, UpdatedAt = DateTime.UtcNow },
+            EquippedItems = [],
+            InventoryItems = []
         };
 
         await playerRepository.AddAsync(player, cancellationToken);
